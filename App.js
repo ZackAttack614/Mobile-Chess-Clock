@@ -1,16 +1,17 @@
 import { StyleSheet, Text, View, TouchableOpacity, Modal } from 'react-native';
 import React, { useState, useEffect } from 'react';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const App = () => {
-  const [playerOneTime, setPlayerOneTime] = useState(300.0);
-  const [playerTwoTime, setPlayerTwoTime] = useState(300.0);
+  const [playerOneTime, setPlayerOneTime] = useState(180.0);
+  const [playerTwoTime, setPlayerTwoTime] = useState(180.0);
   const [activePlayer, setActivePlayer] = useState(null);
   const [firstHit, setFirstHit] = useState(true);
   const [pauseButtonEnabled, setPauseButtonEnabled] = useState(false);
   const [durationSelectorVisible, setDurationSelectorVisible] = useState(false);
-  const [selectedMinutes, setSelectedMinutes] = useState('5');
+  const [selectedMinutes, setSelectedMinutes] = useState('3');
   const [selectedSeconds, setSelectedSeconds] = useState('0');
-  const [customDuration, setCustomDuration] = useState(300.0);
+  const [customDuration, setCustomDuration] = useState(180.0);
   const [gameOver, setGameOver] = useState(false);
 
 
@@ -94,20 +95,20 @@ const App = () => {
           <Text style={styles.modalTitle}>Set Duration</Text>
           <View style={styles.pickerContainer}>
             <TouchableOpacity onPress={() => changeMinutes(-1)} style={styles.durationButton}>
-              <Text style={styles.durationButtonText}>-</Text>
+              <Icon name="remove-outline" size={24} color="#000" />
             </TouchableOpacity>
             <Text style={styles.durationText}>{selectedMinutes} Minutes</Text>
             <TouchableOpacity onPress={() => changeMinutes(1)} style={styles.durationButton}>
-              <Text style={styles.durationButtonText}>+</Text>
+              <Icon name="add-outline" size={24} color="#000" />
             </TouchableOpacity>
           </View>
           <View style={styles.pickerContainer}>
             <TouchableOpacity onPress={() => changeSeconds(-1)} style={styles.durationButton}>
-              <Text style={styles.durationButtonText}>-</Text>
+              <Icon name="remove-outline" size={24} color="#000" />
             </TouchableOpacity>
             <Text style={styles.durationText}>{selectedSeconds} Seconds</Text>
             <TouchableOpacity onPress={() => changeSeconds(1)} style={styles.durationButton}>
-              <Text style={styles.durationButtonText}>+</Text>
+              <Icon name="add-outline" size={24} color="#000" />
             </TouchableOpacity>
           </View>
           <TouchableOpacity
@@ -147,7 +148,7 @@ const App = () => {
       </TouchableOpacity>
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.resetButton} onPress={resetTimers}>
-          <Text style={styles.buttonText}>⟳</Text>
+          <Icon name="refresh-outline" size={24} color="#000" />
         </TouchableOpacity>
         <TouchableOpacity
           style={[
@@ -157,7 +158,7 @@ const App = () => {
           onPress={() => setDurationSelectorVisible(true)}
           disabled={activePlayer !== null}
         >
-          <Text style={styles.buttonText}>Set Duration</Text>
+          <Icon name="time-outline" size={24} color="#000" />
         </TouchableOpacity>
         <TouchableOpacity
           style={[
@@ -176,7 +177,7 @@ const App = () => {
             }
           }}
         >
-          <Text style={styles.buttonText}>‖</Text>
+          <Icon name="pause-outline" size={24} color="#000" />
         </TouchableOpacity>
       </View>
       <TouchableOpacity
@@ -300,11 +301,19 @@ const styles = StyleSheet.create({
   },
   setDurationButton: {
     backgroundColor: '#8c8c8c',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 50,
+    padding: 20,
     marginLeft: 20,
+    marginRight: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  // pauseButton: {
+  //   padding: 20,
+  //   backgroundColor: '#8c8c8c',
+  //   borderRadius: 50,
+  //   marginRight: 20,
+  // },
   setDurationButtonEnabled: {
     backgroundColor: '#A50000',
   },
