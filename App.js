@@ -220,6 +220,8 @@ const App = () => {
               setResetPrimed(false);
             }
 
+            if (gameOver) return;
+
             if (pauseButtonEnabled || activePlayer !== null) {
               if (activePlayer === null) {
                 setActivePlayer(firstHit);
