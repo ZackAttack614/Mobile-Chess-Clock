@@ -14,10 +14,16 @@ const App = () => {
   const [selectedSeconds, setSelectedSeconds] = useState('0');
   const [customDuration, setCustomDuration] = useState(180.0);
   const [gameOver, setGameOver] = useState(false);
+  const [resetPrimed, setResetPrimed] = useState(false);
+
 
   const togglePlayer = (player, running) => {
+    if (resetPrimed) {
+      setResetPrimed(false);
+    }
+
     if (pauseButtonEnabled || gameOver) return;
-  
+
     if (firstHit) {
       setActivePlayer(3 - player);
       setFirstHit(false);
@@ -35,13 +41,11 @@ const App = () => {
       });
     }
   };
-  
-  
 
   const updateTime = () => {
     if (activePlayer !== null && !gameOver) {
       const setTime = activePlayer === 1 ? setPlayerOneTime : setPlayerTwoTime;
-      
+
       setTime((prevTime) => {
         if (prevTime - 0.1 <= 0) {
           setGameOver(true);
@@ -59,7 +63,6 @@ const App = () => {
       return newValue >= -10 && newValue <= 10 ? newValue : prevIncrement;
     });
   };
-  
 
   useEffect(() => {
     if (activePlayer !== null) {
@@ -69,17 +72,21 @@ const App = () => {
       };
     }
   }, [activePlayer]);
-  
 
-  const resetTimers = (duration) => {
+  const resetTimers = (duration, primeOnly = false) => {
+    if (primeOnly) {
+      setResetPrimed(true);
+      return;
+    }
+
     const newDuration = typeof duration === "number" ? duration : customDuration;
     setPlayerOneTime(newDuration);
     setPlayerTwoTime(newDuration);
     setActivePlayer(null);
     setFirstHit(true);
     setGameOver(false);
+    setResetPrimed(false);
   };
-  
 
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
@@ -96,14 +103,14 @@ const App = () => {
         return newValue >= 0 && newValue <= 60 ? newValue : prevMinutes;
       });
     };
-    
+
     const changeSeconds = (delta) => {
       setSelectedSeconds((prevSeconds) => {
         const newValue = parseInt(prevSeconds) + delta;
         return newValue >= 0 && newValue < 60 ? newValue : prevSeconds;
       });
     };
-  
+
     return (
       <Modal
         animationType="slide"
@@ -176,16 +183,25 @@ const App = () => {
         <Text style={styles.time}>{formatTime(playerOneTime)}</Text>
       </TouchableOpacity>
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.resetButton} onPress={resetTimers}>
+        <TouchableOpacity
+          style={[styles.resetButton, resetPrimed ? styles.resetButtonEnabled : null]}
+          onPress={() => {
+            if (!resetPrimed) {
+              resetTimers(null, true);
+            } else {
+              resetTimers();
+            }
+          }}
+        >
           <Icon name="refresh-outline" size={24} color="#000" />
         </TouchableOpacity>
         <TouchableOpacity
           style={[
             styles.setDurationButton,
-            activePlayer === null && styles.setDurationButtonEnabled,
+            activePlayer === null && !pauseButtonEnabled ? styles.setDurationButtonEnabled : null,
           ]}
           onPress={() => setDurationSelectorVisible(true)}
-          disabled={activePlayer !== null}
+          disabled={activePlayer !== null || pauseButtonEnabled}
         >
           <Icon name="time-outline" size={24} color="#000" />
         </TouchableOpacity>
@@ -195,6 +211,10 @@ const App = () => {
             pauseButtonEnabled && styles.pauseButtonEnabled,
           ]}
           onPress={() => {
+            if (resetPrimed) {
+              setResetPrimed(false);
+            }
+
             if (pauseButtonEnabled || activePlayer !== null) {
               if (activePlayer === null) {
                 setActivePlayer(firstHit);
@@ -363,6 +383,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     marginHorizontal: 10,
+  },
+  resetButtonEnabled: {
+    backgroundColor: '#A50000',
   },
 });
 
