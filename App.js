@@ -11,6 +11,8 @@ const App = () => {
   const [selectedMinutes, setSelectedMinutes] = useState('5');
   const [selectedSeconds, setSelectedSeconds] = useState('0');
   const [customDuration, setCustomDuration] = useState(300.0);
+  const [gameOver, setGameOver] = useState(false);
+
 
   const togglePlayer = (player, running) => {
     if (pauseButtonEnabled) return;
@@ -24,22 +26,29 @@ const App = () => {
   };
 
   const updateTime = () => {
-    if (activePlayer !== null) {
+    if (activePlayer !== null && !gameOver) {
       if (activePlayer === 1) {
-        setPlayerOneTime((prevTime) => prevTime - 0.1);
+        setPlayerOneTime((prevTime) => {
+          if (prevTime - 0.1 <= 0) {
+            setGameOver(true);
+            return 0;
+          } else {
+            return prevTime - 0.1;
+          }
+        });
       } else if (activePlayer === 2) {
-        setPlayerTwoTime((prevTime) => prevTime - 0.1);
+        setPlayerTwoTime((prevTime) => {
+          if (prevTime - 0.1 <= 0) {
+            setGameOver(true);
+            return 0;
+          } else {
+            return prevTime - 0.1;
+          }
+        });
       }
     }
   };
-
-  const resetTimers = () => {
-    setPlayerOneTime(customDuration);
-    setPlayerTwoTime(customDuration);
-    setActivePlayer(null);
-    setFirstHit(true);
-  };
-
+  
   useEffect(() => {
     if (activePlayer !== null) {
       const intervalId = setInterval(updateTime, 100);
@@ -48,6 +57,14 @@ const App = () => {
       };
     }
   }, [activePlayer]);
+
+  const resetTimers = () => {
+    setPlayerOneTime(customDuration);
+    setPlayerTwoTime(customDuration);
+    setActivePlayer(null);
+    setFirstHit(true);
+    setGameOver(false);
+  };
 
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
@@ -126,9 +143,7 @@ const App = () => {
         </View>
       </Modal>
     );
-    
   };
-  
 
   return (
     <View style={styles.container}>
@@ -138,7 +153,7 @@ const App = () => {
           activePlayer === 1 && styles.activeClock,
           styles.topClock,
         ]}
-        onPress={() => togglePlayer(1, activePlayer === 1)}
+        onPress={() => !gameOver && togglePlayer(1, activePlayer === 1)}
         activeOpacity={1}
       >
         <Text style={styles.time}>{formatTime(playerOneTime)}</Text>
@@ -179,7 +194,7 @@ const App = () => {
       </View>
       <TouchableOpacity
         style={[styles.clock, activePlayer === 2 && styles.activeClock]}
-        onPress={() => togglePlayer(2, activePlayer === 2)}
+        onPress={() => !gameOver && togglePlayer(2, activePlayer === 2)}
         activeOpacity={1}
       >
         <Text style={styles.time}>{formatTime(playerTwoTime)}</Text>
