@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 const App = () => {
   const [playerOneTime, setPlayerOneTime] = useState(180.0);
   const [playerTwoTime, setPlayerTwoTime] = useState(180.0);
+  const [increment, setIncrement] = useState(0);
   const [activePlayer, setActivePlayer] = useState(null);
   const [firstHit, setFirstHit] = useState(true);
   const [pauseButtonEnabled, setPauseButtonEnabled] = useState(false);
@@ -14,7 +15,6 @@ const App = () => {
   const [customDuration, setCustomDuration] = useState(180.0);
   const [gameOver, setGameOver] = useState(false);
 
-
   const togglePlayer = (player, running) => {
     if (pauseButtonEnabled || gameOver) return;
   
@@ -22,9 +22,21 @@ const App = () => {
       setActivePlayer(3 - player);
       setFirstHit(false);
     } else if (running) {
-      setActivePlayer((prevActivePlayer) => (prevActivePlayer === 1 ? 2 : 1));
+      const setTime = activePlayer === 1 ? setPlayerOneTime : setPlayerTwoTime;
+      setTime((prevTime) => {
+        const updatedTime = prevTime + increment;
+        if (updatedTime <= 0) {
+          setGameOver(true);
+          return 0;
+        } else {
+          setActivePlayer((prevActivePlayer) => (prevActivePlayer === 1 ? 2 : 1));
+          return updatedTime;
+        }
+      });
     }
   };
+  
+  
 
   const updateTime = () => {
     if (activePlayer !== null && !gameOver) {
@@ -40,6 +52,14 @@ const App = () => {
       });
     }
   };
+
+  const changeIncrement = (delta) => {
+    setIncrement((prevIncrement) => {
+      const newValue = prevIncrement + delta;
+      return newValue >= -10 && newValue <= 10 ? newValue : prevIncrement;
+    });
+  };
+  
 
   useEffect(() => {
     if (activePlayer !== null) {
@@ -108,6 +128,15 @@ const App = () => {
             </TouchableOpacity>
             <Text style={styles.durationText}>{selectedSeconds} Seconds</Text>
             <TouchableOpacity onPress={() => changeSeconds(1)} style={styles.durationButton}>
+              <Icon name="add-outline" size={24} color="#000" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.pickerContainer}>
+            <TouchableOpacity onPress={() => changeIncrement(-1)} style={styles.durationButton}>
+              <Icon name="remove-outline" size={24} color="#000" />
+            </TouchableOpacity>
+            <Text style={styles.durationText}>{increment >= 0 ? '+' : ''}{increment} Increment</Text>
+            <TouchableOpacity onPress={() => changeIncrement(1)} style={styles.durationButton}>
               <Icon name="add-outline" size={24} color="#000" />
             </TouchableOpacity>
           </View>
