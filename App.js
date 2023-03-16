@@ -15,8 +15,8 @@ const App = () => {
 
 
   const togglePlayer = (player, running) => {
-    if (pauseButtonEnabled) return;
-
+    if (pauseButtonEnabled || gameOver) return;
+  
     if (firstHit) {
       setActivePlayer(3 - player);
       setFirstHit(false);
@@ -27,28 +27,19 @@ const App = () => {
 
   const updateTime = () => {
     if (activePlayer !== null && !gameOver) {
-      if (activePlayer === 1) {
-        setPlayerOneTime((prevTime) => {
-          if (prevTime - 0.1 <= 0) {
-            setGameOver(true);
-            return 0;
-          } else {
-            return prevTime - 0.1;
-          }
-        });
-      } else if (activePlayer === 2) {
-        setPlayerTwoTime((prevTime) => {
-          if (prevTime - 0.1 <= 0) {
-            setGameOver(true);
-            return 0;
-          } else {
-            return prevTime - 0.1;
-          }
-        });
-      }
+      const setTime = activePlayer === 1 ? setPlayerOneTime : setPlayerTwoTime;
+      
+      setTime((prevTime) => {
+        if (prevTime - 0.1 <= 0) {
+          setGameOver(true);
+          return 0;
+        } else {
+          return prevTime - 0.1;
+        }
+      });
     }
   };
-  
+
   useEffect(() => {
     if (activePlayer !== null) {
       const intervalId = setInterval(updateTime, 100);
@@ -57,14 +48,17 @@ const App = () => {
       };
     }
   }, [activePlayer]);
+  
 
-  const resetTimers = () => {
-    setPlayerOneTime(customDuration);
-    setPlayerTwoTime(customDuration);
+  const resetTimers = (duration) => {
+    const newDuration = typeof duration === "number" ? duration : customDuration;
+    setPlayerOneTime(newDuration);
+    setPlayerTwoTime(newDuration);
     setActivePlayer(null);
     setFirstHit(true);
     setGameOver(false);
   };
+  
 
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
@@ -75,24 +69,18 @@ const App = () => {
   };
 
   const renderDurationSelector = () => {
-    const incrementMinutes = () => {
-      setSelectedMinutes((prevMinutes) => (parseInt(prevMinutes) + 1) % 61);
+    const changeMinutes = (delta) => {
+      setSelectedMinutes((prevMinutes) => {
+        const newValue = parseInt(prevMinutes) + delta;
+        return newValue >= 0 && newValue <= 60 ? newValue : prevMinutes;
+      });
     };
-  
-    const decrementMinutes = () => {
-      setSelectedMinutes((prevMinutes) =>
-        parseInt(prevMinutes) === 0 ? 0 : parseInt(prevMinutes) - 1
-      );
-    };
-  
-    const incrementSeconds = () => {
-      setSelectedSeconds((prevSeconds) => (parseInt(prevSeconds) + 1) % 60);
-    };
-  
-    const decrementSeconds = () => {
-      setSelectedSeconds((prevSeconds) =>
-        parseInt(prevSeconds) === 0 ? 0 : parseInt(prevSeconds) - 1
-      );
+    
+    const changeSeconds = (delta) => {
+      setSelectedSeconds((prevSeconds) => {
+        const newValue = parseInt(prevSeconds) + delta;
+        return newValue >= 0 && newValue < 60 ? newValue : prevSeconds;
+      });
     };
   
     return (
@@ -105,31 +93,30 @@ const App = () => {
         <View style={styles.modalView}>
           <Text style={styles.modalTitle}>Set Duration</Text>
           <View style={styles.pickerContainer}>
-            <TouchableOpacity onPress={decrementMinutes} style={styles.durationButton}>
+            <TouchableOpacity onPress={() => changeMinutes(-1)} style={styles.durationButton}>
               <Text style={styles.durationButtonText}>-</Text>
             </TouchableOpacity>
             <Text style={styles.durationText}>{selectedMinutes} Minutes</Text>
-            <TouchableOpacity onPress={incrementMinutes} style={styles.durationButton}>
+            <TouchableOpacity onPress={() => changeMinutes(1)} style={styles.durationButton}>
               <Text style={styles.durationButtonText}>+</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.pickerContainer}>
-            <TouchableOpacity onPress={decrementSeconds} style={styles.durationButton}>
+            <TouchableOpacity onPress={() => changeSeconds(-1)} style={styles.durationButton}>
               <Text style={styles.durationButtonText}>-</Text>
             </TouchableOpacity>
             <Text style={styles.durationText}>{selectedSeconds} Seconds</Text>
-            <TouchableOpacity onPress={incrementSeconds} style={styles.durationButton}>
+            <TouchableOpacity onPress={() => changeSeconds(1)} style={styles.durationButton}>
               <Text style={styles.durationButtonText}>+</Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity
             style={[styles.modalButton, { marginTop: 20 }]}
             onPress={() => {
-              setCustomDuration(
-                parseInt(selectedMinutes) * 60 + parseInt(selectedSeconds)
-              );
+              const newDuration = parseInt(selectedMinutes) * 60 + parseInt(selectedSeconds);
+              setCustomDuration(newDuration);
               setDurationSelectorVisible(false);
-              resetTimers();
+              resetTimers(newDuration);
             }}
           >
             <Text style={styles.modalButtonText}>Set</Text>
