@@ -86,6 +86,7 @@ const App = () => {
     setFirstHit(true);
     setGameOver(false);
     setResetPrimed(false);
+    setPauseButtonEnabled(false);
   };
 
   const formatTime = (time) => {
@@ -186,6 +187,10 @@ const App = () => {
         <TouchableOpacity
           style={[styles.resetButton, resetPrimed ? styles.resetButtonEnabled : null]}
           onPress={() => {
+            if (activePlayer === null && !pauseButtonEnabled) {
+              return;
+            }
+
             if (!resetPrimed) {
               resetTimers(null, true);
             } else {
