@@ -1,6 +1,5 @@
+import { StyleSheet, Text, View, TouchableOpacity, Modal } from 'react-native';
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-
 
 const App = () => {
   const [playerOneTime, setPlayerOneTime] = useState(300.0);
@@ -8,6 +7,10 @@ const App = () => {
   const [activePlayer, setActivePlayer] = useState(null);
   const [firstHit, setFirstHit] = useState(true);
   const [pauseButtonEnabled, setPauseButtonEnabled] = useState(false);
+  const [durationSelectorVisible, setDurationSelectorVisible] = useState(false);
+  const [selectedMinutes, setSelectedMinutes] = useState('5');
+  const [selectedSeconds, setSelectedSeconds] = useState('0');
+  const [customDuration, setCustomDuration] = useState(300.0);
 
   const togglePlayer = (player, running) => {
     if (pauseButtonEnabled) return;
@@ -31,10 +34,9 @@ const App = () => {
   };
 
   const resetTimers = () => {
-    setPlayerOneTime(300.0);
-    setPlayerTwoTime(300.0);
+    setPlayerOneTime(customDuration);
+    setPlayerTwoTime(customDuration);
     setActivePlayer(null);
-    setPauseButtonEnabled(false);
     setFirstHit(true);
   };
 
@@ -51,9 +53,82 @@ const App = () => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     const tenths = Math.floor((time % 1) * 10);
-  
+
     return `${minutes}:${seconds < 10 ? '0' + seconds : seconds}.${tenths}`;
   };
+
+  const renderDurationSelector = () => {
+    const incrementMinutes = () => {
+      setSelectedMinutes((prevMinutes) => (parseInt(prevMinutes) + 1) % 61);
+    };
+  
+    const decrementMinutes = () => {
+      setSelectedMinutes((prevMinutes) =>
+        parseInt(prevMinutes) === 0 ? 0 : parseInt(prevMinutes) - 1
+      );
+    };
+  
+    const incrementSeconds = () => {
+      setSelectedSeconds((prevSeconds) => (parseInt(prevSeconds) + 1) % 60);
+    };
+  
+    const decrementSeconds = () => {
+      setSelectedSeconds((prevSeconds) =>
+        parseInt(prevSeconds) === 0 ? 0 : parseInt(prevSeconds) - 1
+      );
+    };
+  
+    return (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={durationSelectorVisible}
+        onRequestClose={() => setDurationSelectorVisible(false)}
+      >
+        <View style={styles.modalView}>
+          <Text style={styles.modalTitle}>Set Duration</Text>
+          <View style={styles.pickerContainer}>
+            <TouchableOpacity onPress={decrementMinutes} style={styles.durationButton}>
+              <Text style={styles.durationButtonText}>-</Text>
+            </TouchableOpacity>
+            <Text style={styles.durationText}>{selectedMinutes} Minutes</Text>
+            <TouchableOpacity onPress={incrementMinutes} style={styles.durationButton}>
+              <Text style={styles.durationButtonText}>+</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.pickerContainer}>
+            <TouchableOpacity onPress={decrementSeconds} style={styles.durationButton}>
+              <Text style={styles.durationButtonText}>-</Text>
+            </TouchableOpacity>
+            <Text style={styles.durationText}>{selectedSeconds} Seconds</Text>
+            <TouchableOpacity onPress={incrementSeconds} style={styles.durationButton}>
+              <Text style={styles.durationButtonText}>+</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={[styles.modalButton, { marginTop: 20 }]}
+            onPress={() => {
+              setCustomDuration(
+                parseInt(selectedMinutes) * 60 + parseInt(selectedSeconds)
+              );
+              setDurationSelectorVisible(false);
+              resetTimers();
+            }}
+          >
+            <Text style={styles.modalButtonText}>Set</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modalButton, { marginTop: 10 }]}
+            onPress={() => setDurationSelectorVisible(false)}
+          >
+            <Text style={styles.modalButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    );
+    
+  };
+  
 
   return (
     <View style={styles.container}>
@@ -66,11 +141,21 @@ const App = () => {
         onPress={() => togglePlayer(1, activePlayer === 1)}
         activeOpacity={1}
       >
-      <Text style={styles.time}>{formatTime(playerOneTime)}</Text>
+        <Text style={styles.time}>{formatTime(playerOneTime)}</Text>
       </TouchableOpacity>
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.resetButton} onPress={resetTimers}>
           <Text style={styles.buttonText}>⟳</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.setDurationButton,
+            activePlayer === null && styles.setDurationButtonEnabled,
+          ]}
+          onPress={() => setDurationSelectorVisible(true)}
+          disabled={activePlayer !== null}
+        >
+          <Text style={styles.buttonText}>Set Duration</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[
@@ -99,6 +184,7 @@ const App = () => {
       >
         <Text style={styles.time}>{formatTime(playerTwoTime)}</Text>
       </TouchableOpacity>
+      {renderDurationSelector()}
     </View>
   );
 };
@@ -169,6 +255,74 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
+  },
+  modalView: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 20,
+  },
+  pickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  picker: {
+    height: 50,
+    width: 80,
+  },
+  pickerLabel: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginLeft: 10,
+  },
+  modalButton: {
+    backgroundColor: '#A50000',
+    paddingHorizontal: 30,
+    paddingVertical: 10,
+    borderRadius: 10,
+    elevation: 5,
+  },
+  modalButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  setDurationButton: {
+    backgroundColor: '#8c8c8c',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginLeft: 20,
+  },
+  setDurationButtonEnabled: {
+    backgroundColor: '#A50000',
+  },
+  durationButton: {
+    backgroundColor: '#A50000',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    elevation: 5,
+  },
+  durationButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  durationText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginHorizontal: 10,
   },
 });
 
