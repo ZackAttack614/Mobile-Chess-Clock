@@ -208,7 +208,7 @@ const App = () => {
           onPress={() => setDurationSelectorVisible(true)}
           disabled={activePlayer !== null || pauseButtonEnabled}
         >
-          <Icon name="time-outline" size={24} color="#000" />
+          <Icon name="settings-outline" size={24} color="#000" />
         </TouchableOpacity>
         <TouchableOpacity
           style={[
