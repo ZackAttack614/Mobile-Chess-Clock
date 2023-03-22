@@ -1,12 +1,11 @@
 import { StyleSheet, Text, View, TouchableOpacity, Modal } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import Icon from 'react-native-vector-icons/Ionicons';
-import WebSocket from 'react-native-websocket';
 
-const WEBSOCKET_SERVER_URL = 'ws://websocket-server-gyotsobjdq-ue.a.run.app:8080';
-
+const WEBSOCKET_SERVER_URL = 'wss://websocket-server-gyotsobjdq-ue.a.run.app';
 
 const App = () => {
+  const [whitePlayer, setWhitePlayer] = useState(null);
   const [playerOneTime, setPlayerOneTime] = useState(180.0);
   const [playerTwoTime, setPlayerTwoTime] = useState(180.0);
   const [increment, setIncrement] = useState(0);
@@ -19,8 +18,29 @@ const App = () => {
   const [customDuration, setCustomDuration] = useState(180.0);
   const [gameOver, setGameOver] = useState(false);
   const [resetPrimed, setResetPrimed] = useState(false);
-  const ws = new WebSocket(WEBSOCKET_SERVER_URL);
+  const [ws, setWs] = useState(new WebSocket(WEBSOCKET_SERVER_URL));
+  const [wsOpen, setWsOpen] = useState(false);
 
+  useEffect(() => {
+    const ws = new WebSocket(WEBSOCKET_SERVER_URL);
+  
+    ws.onopen = () => {
+      setWsOpen(true);
+    };
+
+    ws.onclose = () => {
+      setWsOpen(false);
+    };
+  
+    setWs(ws);
+  
+    return () => {
+      if (wsOpen) {
+        ws.close();
+      }
+    };
+  }, []);
+  
 
   const togglePlayer = (player, running) => {
     if (resetPrimed) {
@@ -28,8 +48,9 @@ const App = () => {
     }
   
     if (pauseButtonEnabled || gameOver) return;
-  
+
     if (firstHit) {
+      setWhitePlayer(player);
       setActivePlayer(3 - player);
       setFirstHit(false);
     } else if (running) {
@@ -38,48 +59,27 @@ const App = () => {
         const updatedTime = prevTime + increment;
         if (updatedTime <= 0) {
           setGameOver(true);
-          // send message to WebSocket server when game is over
-          const message = {
-            type: 'game_over',
-            data: {
-              player_one_time: playerOneTime,
-              player_two_time: playerTwoTime,
-              winner: activePlayer === 1 ? 2 : 1
-            }
-          };
-          this.ws.onopen = () => {
-            this.ws.send(JSON.stringify(message));
-          };
-          this.ws.onerror = (error) => {
-            console.error(error);
-          };
-          this.ws.onclose = () => {
-            console.log('WebSocket connection closed');
-          };
           return 0;
         } else {
           setActivePlayer((prevActivePlayer) => (prevActivePlayer === 1 ? 2 : 1));
-          // send message to WebSocket server when player switches turn
-          const message = {
-            type: 'switch_turn',
-            data: {
-              active_player: activePlayer === 1 ? 2 : 1,
-              player_one_time: playerOneTime,
-              player_two_time: playerTwoTime
-            }
-          };
-          this.ws.onopen = () => {
-            this.ws.send(JSON.stringify(message));
-          };
-          this.ws.onerror = (error) => {
-            console.error(error);
-          };
-          this.ws.onclose = () => {
-            console.log('WebSocket connection closed');
-          };
           return updatedTime;
         }
       });
+    }
+
+    // Whatever the case, send a time update to the websocket server
+    const message = {
+      type: 'clock_data',
+      data: {
+        white_time: playerOneTime,
+        black_time: playerTwoTime,
+        active_player: whitePlayer === activePlayer ? 2 : 1
+      }
+    };
+    if (wsOpen && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(message));
+    } else {
+      console.log(`WebSocket connection is not open on ${WEBSOCKET_SERVER_URL}`);
     }
   };
   
@@ -122,6 +122,7 @@ const App = () => {
     }
 
     const newDuration = typeof duration === "number" ? duration : customDuration;
+    setWhitePlayer(null);
     setPlayerOneTime(newDuration);
     setPlayerTwoTime(newDuration);
     setActivePlayer(null);
@@ -129,6 +130,20 @@ const App = () => {
     setGameOver(false);
     setResetPrimed(false);
     setPauseButtonEnabled(false);
+
+    const message = {
+      type: 'clock_data',
+      data: {
+        white_time: newDuration,
+        black_time: newDuration,
+        active_player: null
+      }
+    };
+    if (wsOpen && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(message));
+    } else {
+      console.log(`WebSocket connection is not open on ${WEBSOCKET_SERVER_URL}`);
+    }
   };
 
   const formatTime = (time) => {
@@ -260,6 +275,20 @@ const App = () => {
           onPress={() => {
             if (resetPrimed) {
               setResetPrimed(false);
+            }
+
+            const message = {
+              type: 'clock_data',
+              data: {
+                white_time: playerOneTime,
+                black_time: playerTwoTime,
+                active_player: activePlayer ? null : firstHit
+              }
+            };
+            if (wsOpen && ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify(message));
+            } else {
+              console.log(`WebSocket connection is not open on ${WEBSOCKET_SERVER_URL}`);
             }
 
             if (gameOver) return;
